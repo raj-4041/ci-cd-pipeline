@@ -1,0 +1,91 @@
+pipeline {
+    agent any
+
+    environment {
+        DIRECTORY_PATH = "/"
+        TESTING_ENVIRONMENT = "test"
+        PRODUCTION_ENVIRONMENT = "raj"
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                echo 'fetch the source code from the directory path specified by the environment variable'
+                echo 'compile the code and generate any necessary artifacts'
+            }
+        }
+
+        stage('Unit and Integration Tests') {
+            steps {
+                echo 'Running unit tests'
+                echo 'Running integration tests'
+            }
+            post {
+                success {
+                    emailext body: "The Unit and Integration Test is successful.",
+                    subject: "Testing Stage Success",
+                    to: "rajp97057@gmail.com"
+                }
+            }
+        }
+
+        stage('Code Quality Check') {
+            steps {
+                echo 'check the quality of the code'
+            }
+        }
+
+        stage('Security Scan') {
+            steps {
+                echo 'used checkstyle, pmd, etc. to scan the code for vulnerabilities...'
+            }
+            post {
+                success {
+                    emailext body: "The Security scan is successful.",
+                    subject: "Security Stage Success",
+                    to: "rajp97057@gmail.com"
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo 'deploy the application to staging server, an EC2 instance...'
+            }
+        }
+
+        stage('Integration test on staging') {
+            steps {
+                echo 'Integration test running on staging server...'
+            }
+        }
+
+        stage('Approval') {
+            steps {
+                echo 'waiting for approval by the admin....'
+                sleep 10
+            }
+        }
+
+        stage('Deploy to Production') {
+            steps {
+                echo "deploying code to prod environment (${env.PRODUCTION_ENVIRONMENT})"
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: '**/log/**', allowEmptyArchive: true
+
+            // Send an email with the build log attached
+            emailext(
+                to: 'rajp97057@gmail.com',
+                subject: "Jenkins Job ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - ${currentBuild.currentResult}",
+                body: """<p>Job ${env.JOB_NAME} - Build #${env.BUILD_NUMBER} - ${currentBuild.currentResult}</p>
+<p>Please find the attached log file for details.</p>""",
+                attachLog: true
+            )
+        }
+    }
+}
